@@ -14,7 +14,7 @@ class _HomePageState extends State<HomePage> {
   late Future<String> _currPassword;
   List<String> _prevPasswords = List.empty(growable: true);
 
-  int selectArray() {
+  int _selectArray() {
     int i = Random().nextInt(1000) % 5;
     if (i == 0) {
       i++;
@@ -22,20 +22,12 @@ class _HomePageState extends State<HomePage> {
     return i;
   }
 
-  int getKey() {
+  int _getKey() {
     int key = Random().nextInt(1000) % 26;
     return key;
   }
 
-  String generatePassword(String? currPass) {
-    if (currPass != null && currPass.isNotEmpty) {
-      setState(() {
-        _prevPasswords.add(currPass);
-        _prefs.then((prefs) {
-          prefs.setStringList('prev_password', _prevPasswords);
-        });
-      });
-    }
+  String generatePassword() {
     String password = "";
     const String alphabet = "abcdefghijklmnopqrstuvwxyz";
     const String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -58,7 +50,7 @@ class _HomePageState extends State<HomePage> {
       // 3 is for string number
       // and 4 is for string s_symbol
 
-      int k = selectArray();
+      int k = _selectArray();
 
       //for the first character of password it is mentioned that,
       //it should be a letter
@@ -85,7 +77,7 @@ class _HomePageState extends State<HomePage> {
             break;
           }
 
-          key = getKey();
+          key = _getKey();
           password = password + alphabet[key];
           count_alphabet++;
           count++;
@@ -103,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                   count_s_symbol == 0)) {
             break;
           }
-          key = getKey();
+          key = _getKey();
           password = password + ALPHABET[key];
           count_ALPHABET++;
           count++;
@@ -123,7 +115,7 @@ class _HomePageState extends State<HomePage> {
             break;
           }
 
-          key = getKey();
+          key = _getKey();
           key = key % 10;
           password = password + number[key];
           count_number++;
@@ -144,7 +136,7 @@ class _HomePageState extends State<HomePage> {
             break;
           }
 
-          key = getKey();
+          key = _getKey();
           key = key % 6;
           password = password + s_symbol[key];
           count_s_symbol++;
@@ -152,18 +144,21 @@ class _HomePageState extends State<HomePage> {
           break;
       }
     }
-    if (_prevPasswords.contains(password)) {
-      return generatePassword(null);
-    }
     return password;
   }
 
   Future<void> _generatePassword() async {
     final SharedPreferences prefs = await _prefs;
-    final String password = generatePassword(prefs.getString('password'));
+    final String password = generatePassword();
 
     setState(() {
-      _currPassword = prefs.setString('password', password).then((bool success) {
+      String? currPassword = prefs.getString('password');
+      if (currPassword != null) {
+        _prevPasswords.add(currPassword);
+      }
+      prefs.setStringList('prev_password', _prevPasswords);
+      _currPassword =
+          prefs.setString('password', password).then((bool success) {
         return password;
       });
     });
@@ -174,12 +169,14 @@ class _HomePageState extends State<HomePage> {
     super.initState();
 
     _prefs.then((SharedPreferences prefs) {
+      // prefs.remove('prev_password');
       setState(() {
-        _prevPasswords = prefs.getStringList('prev_password') ?? List.empty(growable: true);
+        _prevPasswords =
+            prefs.getStringList('prev_password') ?? List.empty(growable: true);
       });
     });
     _currPassword = _prefs.then((SharedPreferences prefs) {
-      return prefs.getString('password') ?? generatePassword(null);
+      return prefs.getString('password') ?? generatePassword();
     });
   }
 
